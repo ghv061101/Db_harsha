@@ -1,4 +1,4 @@
-require("dotenv").config(); // To load .env variables
+require("dotenv").config(); // Load .env variables
 const express = require("express");
 const { Pool } = require("pg");
 const cors = require("cors");
@@ -8,28 +8,42 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Connect to NeonDB using connection string from .env
+// ✅ Connect to NeonDB using connection string from .env
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// ✅ Route 1: Fetch all user details from NeonDB
+// ✅ Route 1: Fetch all user details (Return dates without time)
 app.get("/users", async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM user_details");
+        const result = await pool.query(
+            `SELECT 
+                user_id, 
+                account_type, 
+                TO_CHAR(opening_date, 'YYYY-MM-DD') AS opening_date, 
+                TO_CHAR(closing_date, 'YYYY-MM-DD') AS closing_date, 
+                lop 
+            FROM user_details`
+        );
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// ✅ Route 2: Add a new user to NeonDB
+// ✅ Route 2: Add a new user to NeonDB (Ensure date format)
 app.post("/users", async (req, res) => {
-    const { user_id, account_type, opening_date, closing_date, lop } = req.body;
+    let { user_id, account_type, opening_date, closing_date, lop } = req.body;
+    
     try {
         const result = await pool.query(
-            "INSERT INTO user_details (user_id, account_type, opening_date, closing_date, lop) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            `INSERT INTO user_details (user_id, account_type, opening_date, closing_date, lop) 
+            VALUES ($1, $2, $3::DATE, $4::DATE, $5) 
+            RETURNING user_id, account_type, 
+                      TO_CHAR(opening_date, 'YYYY-MM-DD') AS opening_date, 
+                      TO_CHAR(closing_date, 'YYYY-MM-DD') AS closing_date, 
+                      lop`,
             [user_id, account_type, opening_date, closing_date, lop]
         );
         res.json(result.rows[0]);
@@ -41,7 +55,14 @@ app.post("/users", async (req, res) => {
 // ✅ Route 3: Fetch active users (closing_date is NULL)
 app.get("/active-users", async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM user_details WHERE closing_date IS NULL");
+        const result = await pool.query(
+            `SELECT user_id, account_type, 
+                    TO_CHAR(opening_date, 'YYYY-MM-DD') AS opening_date, 
+                    TO_CHAR(closing_date, 'YYYY-MM-DD') AS closing_date, 
+                    lop 
+            FROM user_details 
+            WHERE closing_date IS NULL`
+        );
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
