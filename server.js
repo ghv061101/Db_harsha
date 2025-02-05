@@ -26,7 +26,7 @@ app.get("/users", async (req, res) => {
                 lop 
             FROM user_details`
         );
-        res.json(result.rows);
+        res.json({ data: result.rows }); // Ensure consistent array response
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -46,7 +46,7 @@ app.post("/users", async (req, res) => {
                       lop`,
             [user_id, account_type, opening_date, closing_date, lop]
         );
-        res.json(result.rows[0]);
+        res.json({ data: [result.rows[0]] }); // Wrap response inside an array
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -63,7 +63,7 @@ app.get("/active-users", async (req, res) => {
             FROM user_details 
             WHERE closing_date IS NULL`
         );
-        res.json(result.rows);
+        res.json({ data: result.rows }); // Ensure consistent array response
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -79,7 +79,7 @@ app.get("/supabase-data", async (req, res) => {
             }
         });
         const data = await response.json();
-        res.json(data);
+        res.json({ data }); // Wrap response in an object
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
