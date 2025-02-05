@@ -14,7 +14,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// ✅ Route 1: Fetch all user details (Return dates without time)
+// ✅ Route 1: Fetch all user details (Return only date, no time)
 app.get("/users", async (req, res) => {
     try {
         const result = await pool.query(
@@ -26,7 +26,7 @@ app.get("/users", async (req, res) => {
                 lop 
             FROM user_details`
         );
-        res.json(result.rows);
+        res.json({ data: result.rows });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -63,7 +63,7 @@ app.get("/active-users", async (req, res) => {
             FROM user_details 
             WHERE closing_date IS NULL`
         );
-        res.json(result.rows);
+        res.json({ data: result.rows });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -79,7 +79,7 @@ app.get("/supabase-data", async (req, res) => {
             }
         });
         const data = await response.json();
-        res.json(data);
+        res.json({ data });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -88,4 +88,3 @@ app.get("/supabase-data", async (req, res) => {
 // ✅ Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
